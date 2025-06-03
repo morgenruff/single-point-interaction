@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Typography Loop</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            body {
+                margin: 0;
+                padding: 20px;
+                background: #1a1a1a;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                font-family: "Inter", sans-serif;
+            }
+            main {
+                border: 1px solid #333;
+            }
+        </style>
+    </head>
+    <body>
+        <main></main>
+
+        <script>
+            let font;
+            let words = [
+                "FORM",
+                "SPACE",
+                "TIME",
+                "LIGHT",
+                "DEPTH",
+                "RHYTHM",
+                "SCALE",
+                "FLOW",
+                "PAUSE",
+                "SHIFT",
+                "PULSE",
+                "ECHO",
+                "DRIFT",
+                "MERGE",
+                "BLOOM",
+                "FADE",
+            ];
+
+            let wordObjects = [];
+            let loopDuration = 12000; // 12 seconds for full loop
+            let bgColor, textColor, accentColor;
+
+            function setup() {
+                createCanvas(1000, 1000);
+
+                // Color palette: subdued grays with bright cyan accent
+                bgColor = color(25, 25, 28); // Dark charcoal
+                textColor = color(120, 120, 125); // Muted gray
+                accentColor = color(0, 255, 200); // Bright cyan
+
+                // Create word objects with random properties
+                for (let i = 0; i < 16; i++) {
+                    wordObjects.push({
+                        text: words[i],
+                        x: random(width * 0.1, width * 0.9),
+                        y: random(height * 0.1, height * 0.9),
+                        size: random(24, 84),
+                        weight: random(["300", "400", "500", "600", "700"]),
+                        angle: random(TWO_PI),
+                        rotSpeed: random(-0.002, 0.002),
+                        floatSpeed: random(0.001, 0.003),
+                        floatAmplitude: random(20, 60),
+                        phaseOffset: random(TWO_PI),
+                        opacity: random(0.3, 0.8),
+                        isAccent: i === 0, // First word gets accent color
+                    });
+                }
+            }
+
+            function draw() {
+                background(bgColor);
+
+                let time = millis();
+                let loopProgress = (time % loopDuration) / loopDuration;
+                let slowWave = sin(loopProgress * TWO_PI);
+
+                // Cycle which word gets the accent color
+                let accentIndex = floor(loopProgress * 16) % 16;
+
+                for (let i = 0; i < wordObjects.length; i++) {
+                    let word = wordObjects[i];
+
+                    push();
+
+                    // Calculate position with slow floating motion
+                    let floatOffset =
+                        sin(time * word.floatSpeed + word.phaseOffset) *
+                        word.floatAmplitude;
+                    let currentX = word.x + floatOffset;
+                    let currentY =
+                        word.y +
+                        cos(time * word.floatSpeed * 0.7 + word.phaseOffset) *
+                            (word.floatAmplitude * 0.5);
+
+                    // Rotate around word center
+                    translate(currentX, currentY);
+                    rotate(word.angle + time * word.rotSpeed);
+
+                    // Set font properties
+                    textAlign(CENTER, CENTER);
+                    textSize(word.size);
+
+                    // Color logic: accent color cycles through words
+                    let currentOpacity = word.opacity;
+                    if (i === accentIndex) {
+                        // Accent word pulses brightness
+                        let pulse = (sin(time * 0.005) + 1) * 0.5;
+                        currentOpacity = 0.7 + pulse * 0.3;
+                        fill(
+                            red(accentColor),
+                            green(accentColor),
+                            blue(accentColor),
+                            currentOpacity * 255,
+                        );
+                    } else {
+                        // Other words fade in and out subtly
+                        let fade =
+                            (sin(time * 0.002 + word.phaseOffset) + 1) * 0.5;
+                        currentOpacity = word.opacity * (0.4 + fade * 0.6);
+                        fill(
+                            red(textColor),
+                            green(textColor),
+                            blue(textColor),
+                            currentOpacity * 255,
+                        );
+                    }
+
+                    // Apply font weight (approximate with stroke for variation)
+                    if (word.weight === "700" || word.weight === "600") {
+                        strokeWeight(0.5);
+                        stroke(
+                            red(textColor),
+                            green(textColor),
+                            blue(textColor),
+                            currentOpacity * 100,
+                        );
+                    } else {
+                        noStroke();
+                    }
+
+                    text(word.text, 0, 0);
+
+                    pop();
+                }
+
+                // Subtle overlay effect
+                fill(red(bgColor), green(bgColor), blue(bgColor), 10);
+                rect(0, 0, width, height);
+            }
+        </script>
+    </body>
+</html>
