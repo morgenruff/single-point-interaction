@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Halftone Typography Loop</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Russo+One&family=Audiowide&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            body {
+                margin: 0;
+                padding: 20px;
+                background: #000;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                font-family: "Orbitron", monospace;
+            }
+            main {
+                border: 2px solid #333;
+            }
+        </style>
+    </head>
+    <body>
+        <main></main>
+
+        <script>
+            let words = [
+                "PIXEL",
+                "MATRIX",
+                "CYBER",
+                "NEON",
+                "DIGITAL",
+                "CHROME",
+                "PULSE",
+                "GRID",
+                "VECTOR",
+                "SYNTH",
+                "RETRO",
+                "FLUX",
+                "NOISE",
+                "GLITCH",
+                "BEAM",
+                "CODE",
+            ];
+
+            let wordObjects = [];
+            let dots = [];
+            let loopDuration = 15000; // 15 seconds for full loop
+            let bgColor, dotColor, accentColor;
+            let dotSize = 8;
+            let dotSpacing = 12;
+
+            function setup() {
+                createCanvas(1000, 1000);
+
+                // Color palette inspired by the halftone poster
+                bgColor = color(15, 15, 20); // Deep black
+                dotColor = color(40, 40, 50); // Dark gray dots
+                accentColor = color(255, 50, 150); // Hot pink accent
+
+                // Create halftone dot grid
+                for (let x = 0; x < width + dotSpacing; x += dotSpacing) {
+                    for (let y = 0; y < height + dotSpacing; y += dotSpacing) {
+                        dots.push({
+                            x: x,
+                            y: y,
+                            baseSize: random(2, 6),
+                            phase: random(TWO_PI),
+                            speed: random(0.001, 0.004),
+                        });
+                    }
+                }
+
+                // Create word objects with wild typography
+                let fonts = ["Orbitron", "Russo One", "Audiowide"];
+
+                for (let i = 0; i < 16; i++) {
+                    wordObjects.push({
+                        text: words[i],
+                        x: random(width * 0.15, width * 0.85),
+                        y: random(height * 0.15, height * 0.85),
+                        size: random(32, 96),
+                        font: random(fonts),
+                        angle: random(TWO_PI),
+                        rotSpeed: random(-0.003, 0.003),
+                        floatSpeed: random(0.002, 0.005),
+                        floatAmplitude: random(30, 80),
+                        phaseOffset: random(TWO_PI),
+                        opacity: random(0.4, 0.9),
+                        skew: random(-0.3, 0.3),
+                        scale: random(0.8, 1.4),
+                    });
+                }
+            }
+
+            function draw() {
+                background(bgColor);
+
+                let time = millis();
+                let loopProgress = (time % loopDuration) / loopDuration;
+
+                // Draw animated halftone dots
+                for (let dot of dots) {
+                    let distFromCenter = dist(
+                        dot.x,
+                        dot.y,
+                        width / 2,
+                        height / 2,
+                    );
+                    let wave = sin(
+                        time * dot.speed + dot.phase + distFromCenter * 0.01,
+                    );
+                    let size = dot.baseSize + wave * 3;
+
+                    // Color dots based on position and time
+                    let hue = (distFromCenter * 0.1 + time * 0.0001) % 1;
+                    if (random() < 0.02) {
+                        // Occasional bright dots
+                        fill(255, 100, 200, 120);
+                    } else {
+                        fill(
+                            red(dotColor) + wave * 20,
+                            green(dotColor) + wave * 20,
+                            blue(dotColor) + wave * 30,
+                            80,
+                        );
+                    }
+
+                    noStroke();
+                    ellipse(dot.x, dot.y, size, size);
+                }
+
+                // Cycle which word gets the accent color
+                let accentIndex = floor(loopProgress * 16) % 16;
+
+                // Draw words with wild typography effects
+                for (let i = 0; i < wordObjects.length; i++) {
+                    let word = wordObjects[i];
+
+                    push();
+
+                    // Calculate position with aggressive floating motion
+                    let floatX =
+                        sin(time * word.floatSpeed + word.phaseOffset) *
+                        word.floatAmplitude;
+                    let floatY =
+                        cos(time * word.floatSpeed * 0.8 + word.phaseOffset) *
+                        (word.floatAmplitude * 0.7);
+                    let currentX = word.x + floatX;
+                    let currentY = word.y + floatY;
+
+                    translate(currentX, currentY);
+                    rotate(word.angle + time * word.rotSpeed);
+                    scale(
+                        word.scale + sin(time * 0.003 + word.phaseOffset) * 0.2,
+                    );
+
+                    // Skew transform for dynamic distortion
+                    let skewAmount =
+                        word.skew + sin(time * 0.002 + word.phaseOffset) * 0.1;
+                    // Manual skew using transformation matrix
+                    let skewMatrix = [1, 0, skewAmount, 1, 0, 0];
+                    drawingContext.transform(
+                        skewMatrix[0],
+                        skewMatrix[1],
+                        skewMatrix[2],
+                        skewMatrix[3],
+                        skewMatrix[4],
+                        skewMatrix[5],
+                    );
+
+                    // Set font properties
+                    textAlign(CENTER, CENTER);
+                    textSize(word.size);
+                    textFont(word.font);
+
+                    // Color and effects logic
+                    let isAccent = i === accentIndex;
+                    let currentOpacity = word.opacity;
+
+                    if (isAccent) {
+                        // Accent word with intense effects
+                        let pulse = (sin(time * 0.008) + 1) * 0.5;
+                        currentOpacity = 0.8 + pulse * 0.2;
+
+                        // Multiple colored layers for chromatic effect
+                        fill(255, 50, 150, currentOpacity * 255);
+                        text(word.text, -2, -2);
+
+                        fill(50, 255, 200, currentOpacity * 180);
+                        text(word.text, 2, 2);
+
+                        fill(255, 255, 100, currentOpacity * 220);
+                        text(word.text, 0, 0);
+                    } else {
+                        // Regular words with subtle animation
+                        let fade =
+                            (sin(time * 0.003 + word.phaseOffset) + 1) * 0.5;
+                        currentOpacity = word.opacity * (0.3 + fade * 0.7);
+
+                        // Subtle outline effect
+                        stroke(255, 255, 255, currentOpacity * 60);
+                        strokeWeight(1);
+                        fill(180, 180, 200, currentOpacity * 255);
+                        text(word.text, 0, 0);
+                    }
+
+                    pop();
+                }
+
+                // Add scan lines effect
+                stroke(255, 255, 255, 15);
+                strokeWeight(1);
+                for (let y = 0; y < height; y += 4) {
+                    let alpha = sin(time * 0.001 + y * 0.01) * 10 + 5;
+                    stroke(255, 255, 255, alpha);
+                    line(0, y, width, y);
+                }
+
+                // Subtle vignette
+                for (let i = 0; i < 50; i++) {
+                    let alpha = (50 - i) * 2;
+                    stroke(red(bgColor), green(bgColor), blue(bgColor), alpha);
+                    strokeWeight(2);
+                    noFill();
+                    rect(i, i, width - i * 2, height - i * 2);
+                }
+            }
+        </script>
+    </body>
+</html>
